@@ -1,0 +1,1 @@
+Module "Densité" par Ninety. Donne un aperçu graphique de la densité de chaque galaxie. <a href='http://forum.ogsteam.fr/index.php/topic,299.0.html'>Informations</a>.
