@@ -1,13 +1,11 @@
 <?php
 
-if (!defined('IN_SPYOGAME'))
-{
-	exit('Hacking attempt');
+if (!defined('IN_SPYOGAME')) {
+  exit('Hacking attempt');
 }
 
-if (!$db->sql_numrows($db->sql_query('SELECT active FROM '. TABLE_MOD .' WHERE action = \'densite\' AND active = \'1\' LIMIT 1')))
-{
-  exit('Module non activé');
+if (!$db->sql_numrows($db->sql_query('SELECT active FROM ' . TABLE_MOD . ' WHERE action = \'densite\' AND active = \'1\' LIMIT 1'))) {
+  exit('Module non activ&eacute;');
 }
 
 require_once 'views/page_header.php';
@@ -16,26 +14,23 @@ require_once 'views/page_header.php';
 
 // nearest-neighbor interpolation
 //
-function nni ($array, $width, $factor)
+function nni($array, $width, $factor)
 {
   $factorWidth = $factor * $width;
   $factor2Width = $factor * $factorWidth;
-  
-  foreach ($array as $k => $v)
-  {
+
+  foreach ($array as $k => $v) {
     $index = floor($k / $width) * $factor2Width + ($k % $width) * $factor;
-  
-    for ($i = 0; $i < $factor; $i++)
-    {
-      for ($j = 0; $j < $factor; $j++)
-      {
+
+    for ($i = 0; $i < $factor; $i++) {
+      for ($j = 0; $j < $factor; $j++) {
         $out[$i * $factorWidth + $index + $j] = $v;
       }
     }
   }
-  
+
   ksort($out);
-  
+
   return array_values($out);
 }
 
@@ -45,9 +40,9 @@ function nni ($array, $width, $factor)
 // occupied: 1, black
 // unknown: 2, orange (#FF A5 00)
 
-// Universe constants
-$galaxyCount =   9;
-$systemCount = 499;
+// Universe constants /config ogspy
+$galaxyCount =   $server_config["num_of_galaxies"];
+$systemCount =  $server_config["num_of_systems"];
 $rowCount    =  15;
 
 // Canvas dimensions
@@ -62,88 +57,88 @@ $height = 2 * $padding + ($galaxyCount - 1) * $galaxyMargin + $galaxyCount * $ro
 $length = $systemCount * $rowCount;
 $universe = array();
 
-for ($i = 0; $i < $galaxyCount; $i++)
-{
-  for ($j = 0; $j < $length; $j++)
-  {
+for ($i = 0; $i < $galaxyCount; $i++) {
+  for ($j = 0; $j < $length; $j++) {
     $universe[$i][$j] = 2;
   }
 }
 
 // getting data from db
-$result = $db->sql_query('SELECT galaxy, system, row, player FROM '. TABLE_UNIVERSE);
+$result = $db->sql_query('SELECT galaxy, system, row, player FROM ' . TABLE_UNIVERSE);
 
-while (list($galaxy, $system, $row, $player) = $db->sql_fetch_row($result))
-{
+while (list($galaxy, $system, $row, $player) = $db->sql_fetch_row($result)) {
   $universe[$galaxy - 1][($system - 1) + ($row - 1) * $systemCount] = empty($player) ? 0 : 1;
 }
 
 // scaling array by a factor of $pixelPerPlanet
-foreach ($universe as $k => $galaxy)
-{
+foreach ($universe as $k => $galaxy) {
   $universe[$k] = nni($galaxy, $systemCount, $pixelPerPlanet);
 }
 
 ?>
+<div class="ogspy-mod-header">
+  <h2>Densit&eacute; </h2>
+</div>
 
-<canvas id="canvas" height="<?php echo $height; ?>" width="<?php echo $width; ?>"></canvas>
-<p><input type="button" id="download-canvas" value="Sauver l'image (PNG)" /></p>
+<div style="width: 100%;text-align:center;">
+  <canvas id="canvas" style="display: inline;" height="<?php echo $height; ?>" width="<?php echo $width; ?>"></canvas>
+<br />
+  <input type="button" class="og-button" id="download-canvas" value="Sauver l'image (PNG)" />
+</div>
+
+
 
 <script type="text/javascript">
-
   var rowCount = parseInt(<?php echo $rowCount; ?>),
-      padding = parseInt(<?php echo $padding; ?>),
-      galaxyMargin = parseInt(<?php echo $galaxyMargin; ?>),
-      pixelPerPlanet = parseInt(<?php echo $pixelPerPlanet; ?>),
-      universe = <?php echo json_encode($universe); ?>,
-      
-      canvas = document.getElementById('canvas'),
-      canvasHeight = canvas.height,
-      canvasWidth = canvas.width,
-      ctx = canvas.getContext('2d'),
-      imageData, data, y, i;
-  
+    padding = parseInt(<?php echo $padding; ?>),
+    galaxyMargin = parseInt(<?php echo $galaxyMargin; ?>),
+    pixelPerPlanet = parseInt(<?php echo $pixelPerPlanet; ?>),
+    universe = <?php echo json_encode($universe); ?>,
+
+    canvas = document.getElementById('canvas'),
+    canvasHeight = canvas.height,
+    canvasWidth = canvas.width,
+    ctx = canvas.getContext('2d'),
+    imageData, data, y, i;
+
   // canvas background
   ctx.fillStyle = '#252525';
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-  
+
   // galaxies
-  universe.forEach(function (galaxy, galaxyIndex) {
+  universe.forEach(function(galaxy, galaxyIndex) {
 
     y = padding + galaxyIndex * (rowCount * pixelPerPlanet + galaxyMargin);
     imageData = ctx.getImageData(padding, y, canvasWidth - 2 * padding, rowCount * pixelPerPlanet);
     data = imageData.data;
-    
-    galaxy.forEach(function (row, rowIndex) {
-      
+
+    galaxy.forEach(function(row, rowIndex) {
+
       i = rowIndex << 2; // => * 4
-      
+
       if (row == 2) {
-        data[i]     = 0xFF;
+        data[i] = 0xFF;
         data[i + 1] = 0xA5;
         data[i + 2] = 0x00;
-      }
-      else if (row == 1) {
-        data[i]     = 0x00;
+      } else if (row == 1) {
+        data[i] = 0x00;
         data[i + 1] = 0x00;
         data[i + 2] = 0x00;
-      }
-      else {
-        data[i]     = 0xFF;
+      } else {
+        data[i] = 0xFF;
         data[i + 1] = 0xFF;
         data[i + 2] = 0xFF;
       }
 
-      data[i + 3]   = 0xFF; // alpha
+      data[i + 3] = 0xFF; // alpha
     });
-    
+
     ctx.putImageData(imageData, padding, y);
   });
-  
-  document.getElementById('download-canvas').onclick = function () {
+
+  document.getElementById('download-canvas').onclick = function() {
     window.location = canvas.toDataURL('image/png').replace('image/png', 'image/octet-stream');
   }
-      
 </script>
 
 <?php
