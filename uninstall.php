@@ -8,6 +8,6 @@ if (!defined('IN_SPYOGAME'))
 global $db, $table_prefix;
 
 $mod_uninstall_name = 'densite';
-uninstall_mod ($mod_uninstall_name, $mod_uninstall_table);
+uninstall_mod ($mod_uninstall_name);
 
 ?>
